@@ -18,10 +18,11 @@ session.auth = (username,token)
 # Definindo pacotes
 
 raw_data = []
-for i in range(0,5):
+for i in range(0,1):
         raw_data.append(0)        
-for i in range(0,5):
-        response = session.get("https://api.github.com/search/repositories?q=language:python&sort=stars&order=desc&per_page=100&page=" + str(i+1))
+for i in range(0,1):
+        number_of_requests += 1
+        response = session.get("https://api.github.com/search/repositories?q=language:python&sort=stars&order=desc&per_page=50&page=" + str(i+1))
         raw_data[i] = response.json()
 
 data = {}
@@ -29,6 +30,7 @@ data['repository'] = []
 for i in raw_data:
         for j in i['items']:
                 data['repository'].append({'name': j['name'], 'link': j['html_url'], 'repo': j['full_name']})
+print("Data size:" + str(len(data['repository'])))
 
 # Definindo Sintaxes
 
@@ -43,19 +45,28 @@ for i in raw_data:
 
 frameworks = ['tensorflow']
 MLrepo = {}
+MLrepo['total'] = 0
 MLrepo['list'] = []
+limit = 0
+limit_1 = 0
+print("Wait 60 seconds")
 time.sleep(60)
-count = 0
-aux = 0
 for package in frameworks:
         for i in data['repository']:
-                count += 3
-                aux += count
-                print("Number of repositories checked: " + str(aux))
-                if count == 24:
+                print(i['repo'])
+                limit += 3
+                limit_1 += 3
+                status = session.get("https://api.github.com/rate_limit")
+                status = status.json()
+                print("Status:" + str(status['resources']['search']))
+                if limit == 24:
                         print("Wait 60seconds")
                         time.sleep(60)
-                        count = 0           
+                        limit = 0    
+                if limit_1 == 200:
+                        print("wait 60seconds")
+                        time.sleep(60)
+                        limit_1 = 0       
                 string1 = "\"from "+str(package)+" import\""                
                 string2 = "\"import "+str(package)+"\""
                 string3 = "\"import "+str(package)+" as\""
@@ -76,11 +87,16 @@ for package in frameworks:
                         
                 if toVerify1['total_count'] > 0:
                         MLrepo['list'].append({'package': str(package), 'result_1': toVerify1})
+                        MLrepo['total'] += 1
                 if toVerify2['total_count'] > 0:
-                        MLrepo['list'].append({'package': str(package), 'result_2': toVerify2})                      
+                        MLrepo['list'].append({'package': str(package), 'result_2': toVerify2})
+                        MLrepo['total'] += 1                      
                 if toVerify3['total_count'] > 0:
                         MLrepo['list'].append({'package': str(package), 'result_3': toVerify3})
-                        
+                        MLrepo['total'] += 1
 
-for i in MLrepo:
+for i in MLrepo['list']:
         print(i)
+        
+with open('data.json', 'w') as f:
+        json.dump(MLrepo, f,sort_keys=True, indent=4)
