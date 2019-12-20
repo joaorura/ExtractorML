@@ -6,8 +6,10 @@ import json, requests
 from auth import token
 import time
 
+#Editar username para o seu usuário
+#Criar um arquivo auth.py no diretório do script, com uma constante token = '(token gerado no github)'
 
-username = 'hyago-brito@hotmail.com'
+username = ''
 
 session = requests.Session()
 session.auth = (username,token)
