@@ -1,15 +1,58 @@
 {
   "methods": [
-    "print",
-    "run"
+    "show_versions",
+    "inspection.partial_dependence",
+    "inspection.plot_partial_dependence",
+    "utils.testing.assert_raise_message",
+    "utils.testing.all_estimators",
+    "utils.multiclass.type_of_target",
+    "TensorBoard",
+    "model.summary",
+    "layer.get_weights",
+    "layer.get_config",
+    "raise_exception",
+    "verbose",
+    "torch.autograd.detect_anomaly",
+    "torch.utils.bottlenec",
+    "toDebugString()",
+    "explain"
   ],
   "lines": [
-    "assert"
+    "assert",
+    "TensorBoard",
+    "require_grad",
+    "RecordingObserver",
+    "NoopObserver"
   ],
   "imports": [
-    "tensorflow"
+    "sklearn.base",
+    "sklearn.exceptions",
+    "sklearn.inspection,",
+    "sklearn.utils",
+    "torch.autograd",
+    "torch.onnx",
+    "torch.utils.bottleneck",
+    "torch.utils.data",
+    "torch.quantization",
+    "torch.nn",
+    "torch.jit.ScriptModule",
+    "torch.jit",
+    "torch.autograd.detect_anomaly",
+    "torch.utils.bottlenec",
+    "pyspark.ml",
+    "pyspark.mllib",
+    "pyspark.sql"
   ],
-  "exceptions": [
 
+  "exceptions": [
+    "exceptions.ChangedBehaviorWarning",
+    "exceptions.ConvergenceWarning",
+    "exceptions.DataConversionWarning",
+    "exceptions.DataDimensionalityWarning",
+    "exceptions.EfficiencyWarning",
+    "exceptions.FitFailedWarning",
+    "exceptions.NotFittedError",
+    "exceptions.NonBLASDotWarning",
+    "exceptions.UndefinedMetricWarning"
   ]
 }

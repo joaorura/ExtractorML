@@ -1,10 +1,10 @@
 import json
 import multiprocessing
+import sys
+
 import requests
 import re
-import sys
 import os
-from copy import deepcopy
 from tqdm import tqdm
 
 
@@ -40,14 +40,12 @@ class Regex:
                 for c in b:
                     self.regex_list.append(c)
 
-        print(self.regex_list)
-
     def _methods(self):
         regex_list = []
 
         for i in self._data['methods']:
-            aux = re.compile(rf"([. ]+{i}\(*( *(([_A-Za-z0-9](\[*'*\"*[- _A-Za-z0-9]'*\"*\]*)* *, *)*"
-                             rf"\( *[_A-Za-z0-9](\[*'*\"*[- _A-Za-z0-9]'*\"*\]*)* *)+)*)\)*")
+            aux = re.compile(rf"({i}\(( *(([_A-Za-z0-9](\[*[- _A-Za-z0-9'\"]\]*)* *, *)*"
+                             rf"[_A-Za-z0-9](\[*[- _A-Za-z0-9'\"]*\]*)* *)+)*)\)")
             regex_list.append(aux)
 
         return regex_list
@@ -66,8 +64,8 @@ class Regex:
     def _exceptions(self):
         regex_list = []
         for i in self._data['exceptions']:
-            aux = re.compile(rf"raise +{i}(\(*( *(([_A-Za-z0-9](\[*'*\"*[- _A-Za-z0-9]'*\"*\]*)* *, *)*"
-                             rf"( *[_A-Za-z0-9](\[*'*\"*[- _A-Za-z0-9]'*\"*\]*)* *)+)*)\)*)+")
+            aux = re.compile(rf"raise +{i}(\(*( *(([_A-Za-z0-9](\[*[- _A-Za-z0-9'\"]\]*)* *, *)*"
+                             rf"( *[_A-Za-z0-9](\[*[- _A-Za-z0-9'\"]\]*)* *)+)*)\)*)")
             regex_list.append(aux)
 
             aux = re.compile(rf"except +{i}:")
@@ -82,36 +80,74 @@ def find_match(file, regex):
     for line in file.splitlines():
         matches = re.search(regex, line)
         if matches is not None:
-            to_append = (count, line)
+            to_append = {"number_line": count, "line": line}
             result.append(to_append)
         count += 1
 
     return result
 
 
+def get_super(line, aux_file_0, aux_file_1):
+    start = end = 0
+    for start in range(line - 1, -1, -1):
+
+        search = re.search(r"(def|class) *[_A-Za-z0-9]+", aux_file_0[start])
+
+        if search is not None:
+            break
+
+    for end in range(line - 1, len(aux_file_0)):
+        search = re.search(r"^\n(?!\t)", aux_file_0[end])
+        if search is not None:
+            break
+
+    if start != 0 or end != len(aux_file_0):
+        result = aux_file_1[start:end]
+        for i in range(0, len(result)):
+            result[i] += "\n"
+
+        return result
+    else:
+        return None
+
+
 def process(data, regex_data, results, n):
     for file in tqdm(data, desc=f'Processor {n}'):
-        aux_0 = file[2].replace('github.com', 'raw.githubusercontent.com') \
-                .replace('/blob', '')
+        aux_0 = file["http_file"].replace('github.com', 'raw.githubusercontent.com') \
+            .replace('/blob', '')
         file_data = download_file(aux_0).decode('utf-8')
+        aux_file_0 = file_data.replace("\n", "'~\n").split("~")
+        aux_file_1 = file_data.splitlines()
 
+        list_of_data = {
+            "info": file,
+            "results": {}
+        }
         for a in regex_data:
-            search = find_match(file_data, a)
+            list_of_data["results"][a] = {
+                "items": []
+            }
+            aux = list_of_data["results"][a]["items"]
 
-            finders = []
-            for b in search:
-                finders.append(b)
+            for b in regex_data[a]:
+                search = find_match(file_data, b)
 
-            if len(finders) != 0:
-                to_append = deepcopy(file)
-                to_append.append(finders)
-                results.append(to_append)
+                finders = []
+                for c in search:
+                    finders.append({"method": get_super(c["number_line"], aux_file_0, aux_file_1), "data_line": c})
+
+                if len(finders) != 0:
+                    for i in finders:
+                        aux.append(i)
+
+            list_of_data["results"][a]["amount_items"] = len(aux)
+
+        results.append(list_of_data)
 
 
 def main():
-    multiprocessing.freeze_support()
     conf_path = 'system/conf.json'
-    regex_data = Regex(json_process(conf_path)).regex_list
+    regex_data = Regex(json_process(conf_path)).regex_dict
 
     _dir = 'data'
     data = []
@@ -126,17 +162,17 @@ def main():
             aux_1 = list(i.values())[1]['items']
 
             for j in aux_1:
-                full_name = j['repository']['full_name']
-                name = j['name']
-                url = j['html_url']
-                aux_2 = [full_name, name, url]
+                aux_2 = {
+                    "name_repositories": j['repository']['full_name'],
+                    "file_name": j['name'],
+                    "http_file": j['html_url']
+                }
+
                 data.append(aux_2)
 
     cpu_amount = multiprocessing.cpu_count()
-
     if len(data) < cpu_amount:
         cpu_amount = len(data)
-
     if cpu_amount * 10 < len(data):
         cpu_amount *= 10
 
