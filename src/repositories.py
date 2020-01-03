@@ -1,13 +1,15 @@
-#1 - Definir pacotes
-#2 - Definir sintaxes
-#3 - Minerar todos os repositorios com python (1000) 
-#4 - Buscar sintaxes dentro dos repositorios
-import json, requests
-from auth import token
+# 1 - Definir pacotes
+# 2 - Definir sintaxes
+# 3 - Minerar todos os repositorios com python (1000)
+# 4 - Buscar sintaxes dentro dos repositorios
+import json
+import requests
 import time
 
-#Editar username para o seu usuario
-#Criar um arquivo auth.py no diretorio do script, com uma constante token = '(token gerado no github)'
+from auth import token
+
+# Editar username para o seu usuario
+# Criar um arquivo auth.py no diretorio do script, com uma constante token = '(token gerado no github)'
 
 
 # Definindo Sintaxes
