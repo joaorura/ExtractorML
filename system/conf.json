@@ -1,18 +1,15 @@
 {
   "methods": [
     "print",
-    "assert"
+    "run"
   ],
   "lines": [
-
+    "assert"
   ],
   "imports": [
-
+    "tensorflow"
   ],
   "exceptions": [
-
-  ],
-  "treatment": [
 
   ]
 }
