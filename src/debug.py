@@ -1,11 +1,15 @@
 import json
 import multiprocessing
 import sys
+import token
+import tokenize
 
 import requests
 import re
 import os
 from tqdm import tqdm
+
+multiprocessing.freeze_support()
 
 
 def json_process(file):
@@ -87,6 +91,13 @@ def find_match(file, regex):
     return result
 
 
+def remove_comments(source):
+    source = re.sub(re.compile(r"# *[#_\-'\"A-Za-z0-9 ]*", re.DOTALL), "", source)
+    source = re.sub(re.compile(r'(""")[\n\t#_\-\'"A-Za-z0-9 ]*(""")'), "", source)
+
+    return source
+
+
 def get_super(line, aux_file_0, aux_file_1):
     start = end = 0
     for start in range(line - 1, -1, -1):
@@ -115,7 +126,14 @@ def process(data, regex_data, results, n):
     for file in tqdm(data, desc=f'Processor {n}'):
         aux_0 = file["http_file"].replace('github.com', 'raw.githubusercontent.com') \
             .replace('/blob', '')
-        file_data = download_file(aux_0).decode('utf-8')
+
+        try:
+            file_data = download_file(aux_0).decode('utf-8')
+        except UnicodeDecodeError:
+            print(f"Error in decode file. Link: {file['http_file']}")
+            continue
+
+        file_data = remove_comments(file_data)
         aux_file_0 = file_data.replace("\n", "'~\n").split("~")
         aux_file_1 = file_data.splitlines()
 
@@ -199,7 +217,13 @@ def main():
         for a in the_process:
             a.join()
 
-        results = {'results': list(results)}
+        results = {"results": list(results)}
+        for i in regex_data:
+            results['amount_' + i] = 0
+
+        for i in results['results']:
+            for j in i["results"]:
+                results["amount_" + j] += i["results"][j]['amount_items']
 
         try:
             test = int(sys.argv[1] != 1)
